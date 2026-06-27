@@ -1,0 +1,20 @@
+{
+  "name": "dhanlabh-ai-trading-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Production-oriented AI trading intelligence PWA for probability-based market analysis.",
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace backend",
+    "build": "npm run build --workspace backend && npm run build --workspace frontend",
+    "start": "npm run start --workspace backend",
+    "check": "npm run check --workspace backend && npm run build --workspace frontend"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  }
+}
