@@ -3,7 +3,7 @@ import { AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
 import { badgeTone, money, pct } from '../lib/format.js';
 
 export function SignalCard({ analysis }) {
-  if (!analysis) return <div className="glass rounded-3xl p-6 text-slate-400">Loading AI market analysis…</div>;
+  if (!analysis) return <div className="glass rounded-3xl p-6 text-slate-400">Loading AI market analysis...</div>;
   return (
     <section className="glass rounded-3xl p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -17,7 +17,7 @@ export function SignalCard({ analysis }) {
         <div className="text-right">
           <p className="text-sm text-slate-500">Last price</p>
           <p className="text-2xl font-semibold text-white">{money(analysis.lastPrice)}</p>
-          <p className="text-xs text-slate-500">{new Date(analysis.generatedAt).toLocaleTimeString()} · {analysis.dataSource}</p>
+          <p className="text-xs text-slate-500">{new Date(analysis.generatedAt).toLocaleTimeString()} - {analysis.dataSource}</p>
         </div>
       </div>
 
@@ -36,10 +36,18 @@ export function SignalCard({ analysis }) {
       )}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <Metric label="Trade score" value={pct(analysis.tradeScore ?? analysis.confidence)} tone="text-aqua" />
+        <Metric label="Trade grade" value={analysis.tradeGrade || analysis.signalGrade} tone="text-mint" />
         <Metric label="Bullish probability" value={pct(analysis.bullishProbability)} tone="text-mint" />
         <Metric label="Bearish probability" value={pct(analysis.bearishProbability)} tone="text-danger" />
         <Metric label="Confidence" value={pct(analysis.confidence)} tone="text-aqua" />
         <Metric label="Risk level" value={analysis.riskLevel} tone={analysis.riskLevel === 'High' ? 'text-danger' : 'text-mint'} />
+      </div>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <Metric label="Approval" value={analysis.tradeApproval?.answer || 'NO'} tone={analysis.tradeApproval?.approved ? 'text-mint' : 'text-amber'} />
+        <Metric label="Pattern memory" value={analysis.patternMemory?.historicalSimilarity ? pct(analysis.patternMemory.historicalSimilarity) : 'No data'} tone="text-aqua" />
+        <Metric label="Calibration" value={`${analysis.confidenceCalibration?.adjustment ?? 0}%`} tone={(analysis.confidenceCalibration?.adjustment ?? 0) >= 0 ? 'text-mint' : 'text-danger'} />
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">

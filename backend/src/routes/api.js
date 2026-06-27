@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import { ASSETS, TIMEFRAMES } from '../config/assets.js';
 import { runFullAnalysis } from '../ai/ensemble.js';
 import { getCandles, getScanner } from '../services/marketDataService.js';
-import { listJournal, listPredictions, saveJournal, storageMode } from '../services/storageService.js';
+import { listJournal, listPredictions, saveJournal, storageMode, updatePredictionOutcome } from '../services/storageService.js';
 import { runBacktest } from '../services/backtestService.js';
 import { analyzeScreenshot } from '../services/screenshotService.js';
 import { analyzeMultiTimeframe, analyzeRealtime, analyzeWatchlist, realtimeEngineStats } from '../services/realtimeAnalysisService.js';
@@ -11,7 +11,7 @@ import { analyzeMultiTimeframe, analyzeRealtime, analyzeWatchlist, realtimeEngin
 export const api = express.Router();
 
 api.get('/health', (_req, res) => {
-  res.json({ ok: true, service: 'Dhanlabh AI Trading Platform', version: '2.0.0', storageMode, realtime: realtimeEngineStats(), timestamp: new Date().toISOString() });
+  res.json({ status: 'ok' });
 });
 
 api.get('/meta', (_req, res) => {
@@ -86,6 +86,18 @@ api.get('/signals/history', async (_req, res, next) => {
   }
 });
 
+api.post('/signals/resolve', async (req, res, next) => {
+  try {
+    const { symbol, timeframe, generatedAt, actualMarketResult, winLoss } = req.body || {};
+    if (!symbol || !timeframe || !winLoss) {
+      return res.status(400).json({ error: 'symbol, timeframe, and winLoss are required.' });
+    }
+    res.json(await updatePredictionOutcome({ symbol, timeframe, generatedAt, actualMarketResult, winLoss }));
+  } catch (error) {
+    next(error);
+  }
+});
+
 api.post('/backtest', async (req, res, next) => {
   try {
     const symbol = req.body.symbol || 'BTC/USD';
@@ -117,20 +129,54 @@ api.get('/personal-ai', async (_req, res, next) => {
   try {
     const journal = await listJournal();
     const completed = journal.filter((item) => Number.isFinite(Number(item.result)));
-    const byAsset = Object.groupBy ? Object.groupBy(completed, (item) => item.symbol || 'Unknown') : completed.reduce((acc, item) => ({ ...acc, [item.symbol || 'Unknown']: [...(acc[item.symbol || 'Unknown'] || []), item] }), {});
-    const assetStats = Object.entries(byAsset).map(([asset, rows]) => ({
-      asset,
+    const groupBy = (keyFn) => completed.reduce((acc, item) => {
+      const key = keyFn(item) || 'Unknown';
+      acc[key] = [...(acc[key] || []), item];
+      return acc;
+    }, {});
+    const stats = (groups, labelKey) => Object.entries(groups).map(([label, rows]) => ({
+      [labelKey]: label,
       winRate: rows.length ? Math.round(rows.filter((row) => Number(row.result) > 0).length / rows.length * 100) : 0,
       trades: rows.length
-    })).sort((a, b) => b.winRate - a.winRate);
+    })).sort((a, b) => b.winRate - a.winRate || b.trades - a.trades);
+    const sessionFor = (item) => {
+      if (item.session) return item.session;
+      const hour = new Date(item.created_at || Date.now()).getUTCHours();
+      if (hour < 8) return 'Asia';
+      if (hour < 14) return 'Europe';
+      return 'US';
+    };
+    const assetStats = stats(groupBy((item) => item.symbol), 'asset');
+    const expiryStats = stats(groupBy((item) => item.timeframe || item.expiry), 'expiry');
+    const sessionStats = stats(groupBy(sessionFor), 'session');
+    let bestWinStreak = 0;
+    let currentWinStreak = 0;
+    let lossStreak = 0;
+    for (const row of [...completed].reverse()) {
+      if (Number(row.result) > 0) {
+        currentWinStreak += 1;
+        lossStreak = 0;
+        bestWinStreak = Math.max(bestWinStreak, currentWinStreak);
+      } else {
+        lossStreak += 1;
+        currentWinStreak = 0;
+      }
+    }
     res.json({
       trades: completed.length,
       winRate: completed.length ? Math.round(completed.filter((item) => Number(item.result) > 0).length / completed.length * 100) : 0,
       bestAsset: assetStats[0]?.asset || 'Not enough data',
       worstAsset: assetStats.at(-1)?.asset || 'Not enough data',
-      bestTradingHours: 'Needs more journal samples',
-      worstTradingHours: 'Needs more journal samples',
-      assetStats
+      bestExpiry: expiryStats[0]?.expiry || 'Not enough data',
+      worstExpiry: expiryStats.at(-1)?.expiry || 'Not enough data',
+      bestSession: sessionStats[0]?.session || 'Not enough data',
+      worstSession: sessionStats.at(-1)?.session || 'Not enough data',
+      bestWinStreak,
+      currentWinStreak,
+      lossStreak,
+      assetStats,
+      expiryStats,
+      sessionStats
     });
   } catch (error) {
     next(error);

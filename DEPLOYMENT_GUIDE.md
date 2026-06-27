@@ -8,7 +8,7 @@
 
 ## Render
 
-1. In Render, choose **New → Blueprint**.
+1. In Render, choose **New -> Blueprint**.
 2. Select the GitHub repository.
 3. Render will read `render.yaml`.
 4. Add optional environment variables:

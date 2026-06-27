@@ -30,7 +30,7 @@ export function AIEngineGrid({ engines = [] }) {
             <div className="mt-3 h-2 overflow-hidden rounded-full bg-danger/20">
               <div className="h-full rounded-full bg-mint" style={{ width: `${engine.positiveProbability ?? engine.bullishProbability}%` }} />
             </div>
-            <p className="mt-2 text-xs text-slate-500">Confidence {pct(engine.confidence)} · {engine.polarity || 'Neutral'} pressure</p>
+            <p className="mt-2 text-xs text-slate-500">Confidence {pct(engine.confidence)} - {engine.polarity || 'Neutral'} pressure</p>
             <p className="mt-3 line-clamp-2 text-sm text-slate-300">{engine.reasons?.[0] || 'Neutral confirmation.'}</p>
           </div>
         ))}
@@ -58,7 +58,7 @@ export function ForecastAndPlanner({ analysis }) {
       <div className="glass rounded-3xl p-6">
         <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white"><Target className="h-5 w-5 text-mint" /> Trade planner</h2>
         <div className="mb-3 rounded-2xl border border-mint/15 bg-mint/10 px-4 py-3 text-sm text-mint">
-          {planner.tradeType || 'Fixed Time Trade'} · {planner.action || analysis.direction}
+          {planner.tradeType || 'Fixed Time Trade'} - {planner.action || analysis.direction}
         </div>
         <div className="grid grid-cols-2 gap-3">
           <Tiny label="Entry price" value={money(planner.entry)} />
@@ -83,14 +83,20 @@ function Tiny({ label, value }) {
 export function Scanner({ assets, timeframe }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   useEffect(() => {
     setLoading(true);
-    api.scanner(assets.map((asset) => asset.symbol), timeframe).then((data) => setRows(data.results)).finally(() => setLoading(false));
+    setError('');
+    api.scanner(assets.map((asset) => asset.symbol), timeframe)
+      .then((data) => setRows(data.results || []))
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
   }, [assets, timeframe]);
   return (
     <section className="glass rounded-3xl p-6">
       <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white"><LineChart className="h-5 w-5 text-aqua" /> Live scanner</h2>
-      {loading && <p className="text-sm text-slate-500">Scanning all supported assets…</p>}
+      {loading && <p className="text-sm text-slate-500">Scanning all supported assets...</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
       <div className="mt-3 grid gap-2">
         {rows.map((row) => (
           <div key={row.symbol} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm">
@@ -109,6 +115,7 @@ export function LiveWatchlist({ assets, timeframe }) {
   const symbols = assets.slice(0, 18).map((asset) => asset.symbol);
   const [rows, setRows] = useState([]);
   const [updatedAt, setUpdatedAt] = useState('');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -116,7 +123,10 @@ export function LiveWatchlist({ assets, timeframe }) {
       if (cancelled) return;
       setRows(data.items || []);
       setUpdatedAt(new Date().toLocaleTimeString());
-    }).catch(() => {});
+      setError('');
+    }).catch((err) => {
+      if (!cancelled) setError(err.message);
+    });
     load();
     const timer = setInterval(load, 4500);
     return () => {
@@ -129,14 +139,15 @@ export function LiveWatchlist({ assets, timeframe }) {
     <section className="glass rounded-3xl p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-white">Live watchlist</h2>
-        <span className="text-xs text-slate-500">Updated {updatedAt || '—'}</span>
+        <span className="text-xs text-slate-500">Updated {updatedAt || '-'}</span>
       </div>
+      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       <div className="grid max-h-[420px] gap-2 overflow-auto">
         {rows.map((row) => (
           <div key={row.symbol} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm">
             <div>
               <p className="font-semibold text-white">{row.symbol}</p>
-              <p className="text-xs text-slate-500">v{row.marketVersion} · {row.tickDirection} · {row.analysisLatencyMs}ms</p>
+              <p className="text-xs text-slate-500">v{row.marketVersion} - {row.tickDirection} - {row.analysisLatencyMs}ms</p>
             </div>
             <span className={`rounded-full border px-2 py-1 text-xs ${badgeTone(row.direction)}`}>{row.direction}</span>
             <span className="text-slate-300">{pct(row.confidence)}</span>
@@ -149,12 +160,18 @@ export function LiveWatchlist({ assets, timeframe }) {
 
 export function MultiTimeframePanel({ symbol }) {
   const [data, setData] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     const load = () => api.multiTimeframe(symbol).then((payload) => {
-      if (!cancelled) setData(payload);
-    }).catch(() => {});
+      if (!cancelled) {
+        setData(payload);
+        setError('');
+      }
+    }).catch((err) => {
+      if (!cancelled) setError(err.message);
+    });
     load();
     const timer = setInterval(load, 6000);
     return () => {
@@ -163,15 +180,17 @@ export function MultiTimeframePanel({ symbol }) {
     };
   }, [symbol]);
 
-  if (!data) return null;
+  if (!data && !error) return null;
   return (
     <section className="glass rounded-3xl p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-white">Multi-timeframe comparison</h2>
-        <span className={`rounded-full border px-3 py-1 text-sm ${badgeTone(data.dominantDirection)}`}>
+        {data && <span className={`rounded-full border px-3 py-1 text-sm ${badgeTone(data.dominantDirection)}`}>
           {data.dominantDirection} alignment {pct(data.alignment)}
-        </span>
+        </span>}
       </div>
+      {error && <p className="text-sm text-danger">{error}</p>}
+      {data && (
       <div className="grid gap-2 md:grid-cols-5">
         {data.rows.map((row) => (
           <div key={row.timeframe} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3">
@@ -184,16 +203,19 @@ export function MultiTimeframePanel({ symbol }) {
           </div>
         ))}
       </div>
+      )}
     </section>
   );
 }
 
 export function HistoryPanel() {
   const [items, setItems] = useState([]);
-  useEffect(() => { api.history().then((data) => setItems(data.items || [])); }, []);
+  const [error, setError] = useState('');
+  useEffect(() => { api.history().then((data) => setItems(data.items || [])).catch((err) => setError(err.message)); }, []);
   return (
     <section className="glass rounded-3xl p-6">
       <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white"><History className="h-5 w-5 text-aqua" /> Signal history</h2>
+      {error && <p className="mb-3 text-sm text-danger">{error}</p>}
       <div className="grid max-h-[420px] gap-2 overflow-auto">
         {items.slice(0, 18).map((item, index) => (
           <div key={`${item.generatedAt || item.generated_at}-${index}`} className="rounded-2xl border border-white/10 bg-white/[0.03] p-3 text-sm">
@@ -201,7 +223,7 @@ export function HistoryPanel() {
               <span className="font-semibold text-white">{item.symbol}</span>
               <span className={`rounded-full border px-2 py-1 text-xs ${badgeTone(item.direction)}`}>{item.direction}</span>
             </div>
-            <p className="mt-1 text-slate-500">Confidence {pct(item.confidence)} · Risk {item.riskLevel || item.risk_level}</p>
+            <p className="mt-1 text-slate-500">Confidence {pct(item.confidence)} - Risk {item.riskLevel || item.risk_level}</p>
           </div>
         ))}
       </div>
@@ -212,21 +234,24 @@ export function HistoryPanel() {
 export function BacktestPanel({ symbol, timeframe }) {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const run = () => {
     setLoading(true);
-    api.backtest(symbol, timeframe).then(setResult).finally(() => setLoading(false));
+    setError('');
+    api.backtest(symbol, timeframe).then(setResult).catch((err) => setError(err.message)).finally(() => setLoading(false));
   };
   return (
     <section className="glass rounded-3xl p-6">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-lg font-bold text-white">Backtesting</h2>
-        <button onClick={run} className="rounded-xl bg-aqua px-4 py-2 text-sm font-bold text-ink">{loading ? 'Running…' : 'Run test'}</button>
+        <button onClick={run} className="rounded-xl bg-aqua px-4 py-2 text-sm font-bold text-ink">{loading ? 'Running...' : 'Run test'}</button>
       </div>
+      {error && <p className="mt-3 text-sm text-danger">{error}</p>}
       <div className="mt-4 grid grid-cols-2 gap-3">
-        <Tiny label="Win rate" value={result ? pct(result.winRate) : '—'} />
-        <Tiny label="Profit factor" value={result?.profitFactor ?? '—'} />
-        <Tiny label="Drawdown" value={result ? money(result.drawdown) : '—'} />
-        <Tiny label="Trades" value={result?.trades ?? '—'} />
+        <Tiny label="Win rate" value={result ? pct(result.winRate) : '-'} />
+        <Tiny label="Profit factor" value={result?.profitFactor ?? '-'} />
+        <Tiny label="Drawdown" value={result ? money(result.drawdown) : '-'} />
+        <Tiny label="Trades" value={result?.trades ?? '-'} />
       </div>
     </section>
   );
@@ -235,12 +260,22 @@ export function BacktestPanel({ symbol, timeframe }) {
 export function JournalAndPersonalAI({ assets }) {
   const [journal, setJournal] = useState([]);
   const [personal, setPersonal] = useState(null);
-  const [form, setForm] = useState({ symbol: assets[0]?.symbol || 'BTC/USD', direction: 'BUY', entry: '', exit: '', result: '', notes: '' });
-  const refresh = () => Promise.all([api.journal(), api.personalAI()]).then(([j, p]) => { setJournal(j.items || []); setPersonal(p); });
+  const [form, setForm] = useState({ symbol: assets[0]?.symbol || 'BTC/USD', timeframe: '1m', session: 'Asia', direction: 'BUY', entry: '', exit: '', result: '', notes: '' });
+  const [error, setError] = useState('');
+  const refresh = () => Promise.all([api.journal(), api.personalAI()]).then(([j, p]) => {
+    setJournal(j.items || []);
+    setPersonal(p);
+    setError('');
+  }).catch((err) => setError(err.message));
   useEffect(() => { refresh(); }, []);
   const submit = async (event) => {
     event.preventDefault();
-    await api.addJournal({ ...form, entry: Number(form.entry), exit: Number(form.exit), result: Number(form.result) });
+    try {
+      await api.addJournal({ ...form, entry: Number(form.entry), exit: Number(form.exit), result: Number(form.result) });
+    } catch (err) {
+      setError(err.message);
+      return;
+    }
     setForm({ ...form, entry: '', exit: '', result: '', notes: '' });
     refresh();
   };
@@ -251,25 +286,35 @@ export function JournalAndPersonalAI({ assets }) {
         <form onSubmit={submit} className="grid gap-3">
           <select value={form.symbol} onChange={(e) => setForm({ ...form, symbol: e.target.value })} className="rounded-xl border border-white/10 bg-panel p-3 text-white">{assets.map((asset) => <option key={asset.symbol}>{asset.symbol}</option>)}</select>
           <div className="grid grid-cols-2 gap-3">
+            <select value={form.timeframe} onChange={(e) => setForm({ ...form, timeframe: e.target.value })} className="rounded-xl border border-white/10 bg-panel p-3 text-white"><option>15s</option><option>30s</option><option>1m</option><option>2m</option><option>3m</option><option>5m</option><option>10m</option><option>15m</option></select>
+            <select value={form.session} onChange={(e) => setForm({ ...form, session: e.target.value })} className="rounded-xl border border-white/10 bg-panel p-3 text-white"><option>Asia</option><option>Europe</option><option>US</option></select>
             <select value={form.direction} onChange={(e) => setForm({ ...form, direction: e.target.value })} className="rounded-xl border border-white/10 bg-panel p-3 text-white"><option>BUY</option><option>SELL</option></select>
             <input required placeholder="P/L result" value={form.result} onChange={(e) => setForm({ ...form, result: e.target.value })} className="rounded-xl border border-white/10 bg-panel p-3 text-white" />
             <input required placeholder="Entry" value={form.entry} onChange={(e) => setForm({ ...form, entry: e.target.value })} className="rounded-xl border border-white/10 bg-panel p-3 text-white" />
             <input placeholder="Exit" value={form.exit} onChange={(e) => setForm({ ...form, exit: e.target.value })} className="rounded-xl border border-white/10 bg-panel p-3 text-white" />
           </div>
           <textarea placeholder="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="min-h-20 rounded-xl border border-white/10 bg-panel p-3 text-white" />
+          {error && <p className="text-sm text-danger">{error}</p>}
           <button className="rounded-xl bg-mint px-4 py-3 font-bold text-ink">Save trade</button>
         </form>
       </div>
       <div className="glass rounded-3xl p-6">
         <h2 className="mb-4 text-lg font-bold text-white">Personal AI</h2>
         <div className="grid grid-cols-2 gap-3">
-          <Tiny label="Win rate" value={personal ? pct(personal.winRate) : '—'} />
-          <Tiny label="Trades" value={personal?.trades ?? '—'} />
-          <Tiny label="Best asset" value={personal?.bestAsset || '—'} />
-          <Tiny label="Worst asset" value={personal?.worstAsset || '—'} />
+          <Tiny label="Win rate" value={personal ? pct(personal.winRate) : '-'} />
+          <Tiny label="Trades" value={personal?.trades ?? '-'} />
+          <Tiny label="Best asset" value={personal?.bestAsset || '-'} />
+          <Tiny label="Worst asset" value={personal?.worstAsset || '-'} />
+          <Tiny label="Best expiry" value={personal?.bestExpiry || '-'} />
+          <Tiny label="Worst expiry" value={personal?.worstExpiry || '-'} />
+          <Tiny label="Best session" value={personal?.bestSession || '-'} />
+          <Tiny label="Worst session" value={personal?.worstSession || '-'} />
+          <Tiny label="Best streak" value={personal?.bestWinStreak ?? '-'} />
+          <Tiny label="Current streak" value={personal?.currentWinStreak ?? '-'} />
+          <Tiny label="Loss streak" value={personal?.lossStreak ?? '-'} />
         </div>
         <div className="mt-4 max-h-48 overflow-auto">
-          {journal.slice(0, 6).map((item) => <p key={item.id} className="border-b border-white/10 py-2 text-sm text-slate-400">{item.symbol} · {item.direction} · P/L {item.result}</p>)}
+          {journal.slice(0, 6).map((item) => <p key={item.id} className="border-b border-white/10 py-2 text-sm text-slate-400">{item.symbol} - {item.direction} - P/L {item.result}</p>)}
         </div>
       </div>
     </section>
@@ -279,6 +324,7 @@ export function JournalAndPersonalAI({ assets }) {
 export function ScreenshotAI() {
   const [result, setResult] = useState(null);
   const [preview, setPreview] = useState('');
+  const [error, setError] = useState('');
   const analyze = async (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -317,7 +363,10 @@ export function ScreenshotAI() {
         volatility: Math.max(...points) - Math.min(...points),
         trendSlope
       };
-      setResult(await api.screenshot(stats));
+      api.screenshot(stats).then((payload) => {
+        setResult(payload);
+        setError('');
+      }).catch((err) => setError(err.message));
     };
     img.src = imageUrl;
   };
@@ -325,11 +374,12 @@ export function ScreenshotAI() {
     <section className="glass rounded-3xl p-6">
       <h2 className="mb-4 flex items-center gap-2 text-lg font-bold text-white"><Camera className="h-5 w-5 text-aqua" /> Screenshot AI</h2>
       <input type="file" accept="image/*" onChange={analyze} className="w-full rounded-xl border border-dashed border-white/20 bg-white/[0.03] p-4 text-sm text-slate-300" />
+      {error && <p className="mt-3 text-sm text-danger">{error}</p>}
       {preview && <img src={preview} alt="Uploaded market screenshot" className="mt-4 max-h-64 w-full rounded-2xl object-cover" />}
       {result && <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-4 text-sm text-slate-300">
-        <p className={`mb-2 inline-flex rounded-full border px-3 py-1 ${badgeTone(result.direction)}`}>{result.direction} · {pct(result.confidence)}</p>
+        <p className={`mb-2 inline-flex rounded-full border px-3 py-1 ${badgeTone(result.direction)}`}>{result.direction} - {pct(result.confidence)}</p>
         <p>{result.reason}</p>
-        <p className="mt-2 text-slate-500">Trend: {result.trend} · Risk: {result.riskLevel}</p>
+        <p className="mt-2 text-slate-500">Trend: {result.trend} - Risk: {result.riskLevel}</p>
       </div>}
     </section>
   );

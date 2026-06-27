@@ -10,9 +10,16 @@ create table if not exists predictions (
   confidence numeric,
   risk_level text,
   signal_grade text,
+  actual_market_result text,
+  win_loss text,
+  resolved_at timestamptz,
   payload jsonb,
   created_at timestamptz default now()
 );
+
+alter table predictions add column if not exists actual_market_result text;
+alter table predictions add column if not exists win_loss text;
+alter table predictions add column if not exists resolved_at timestamptz;
 
 create table if not exists market_candles (
   symbol text not null,
@@ -29,13 +36,22 @@ create table if not exists market_candles (
 create table if not exists trade_journal (
   id uuid primary key,
   symbol text,
+  timeframe text,
   direction text,
   entry numeric,
   exit numeric,
   result numeric,
+  session text,
   notes text,
   created_at timestamptz default now()
 );
+
+alter table trade_journal add column if not exists timeframe text;
+alter table trade_journal add column if not exists session text;
+
+create index if not exists predictions_symbol_timeframe_created_idx on predictions(symbol, timeframe, created_at desc);
+create index if not exists trade_journal_symbol_timeframe_idx on trade_journal(symbol, timeframe);
+create index if not exists market_candles_symbol_timeframe_time_idx on market_candles(symbol, timeframe, time desc);
 
 create table if not exists backtests (
   id uuid primary key,

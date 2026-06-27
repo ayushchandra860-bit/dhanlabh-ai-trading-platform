@@ -39,6 +39,29 @@ app.use('/api', (req, res) => {
 });
 
 const frontendDist = path.resolve(__dirname, '../../frontend/dist');
+
+function listRouterRoutes(router, prefix = '') {
+  return router.stack
+    .filter((layer) => layer.route)
+    .flatMap((layer) => {
+      const routePath = `${prefix}${layer.route.path}`.replace(/\/+/g, '/');
+      return Object.keys(layer.route.methods)
+        .filter((method) => layer.route.methods[method])
+        .map((method) => `${method.toUpperCase()} ${routePath}`);
+    });
+}
+
+function printRegisteredRoutes() {
+  const routes = [
+    ...listRouterRoutes(api, '/api'),
+    'GET /ws/market',
+    'STATIC frontend/dist',
+    'GET * SPA fallback'
+  ];
+  console.log('Registered routes:');
+  routes.forEach((route) => console.log(`  ${route}`));
+}
+
 app.use((req, res, next) => {
   if (req.path === '/' || req.path.endsWith('.html') || req.path.startsWith('/assets/')) {
     res.setHeader('Cache-Control', 'no-store, max-age=0');
@@ -57,8 +80,20 @@ app.use((error, _req, res, _next) => {
   res.status(500).json({ error: error.message || 'Unexpected server error' });
 });
 
-attachWebSocketServer(server);
+const wss = attachWebSocketServer(server);
 
 server.listen(port, () => {
   console.log(`Dhanlabh AI Trading Platform running on port ${port}`);
+  printRegisteredRoutes();
 });
+
+function shutdown(signal) {
+  console.log(`Received ${signal}; shutting down Dhanlabh server`);
+  wss.clients.forEach((client) => client.terminate());
+  wss.close(() => {});
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(0), 2500).unref();
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => shutdown('SIGTERM'));

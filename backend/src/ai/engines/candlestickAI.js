@@ -9,6 +9,9 @@ const bearish = (candle) => candle.close < candle.open;
 
 export function candlestickAI(ctx) {
   const candles = ctx.candles;
+  if (!candles.length || !ctx.lastCandle) {
+    return engineResult('Candlestick AI', 0, 0, ['No candle data available for candlestick recognition'], { noCandles: true }, 1.0);
+  }
   const a = candles[candles.length - 3];
   const b = ctx.previousCandle;
   const c = ctx.lastCandle;

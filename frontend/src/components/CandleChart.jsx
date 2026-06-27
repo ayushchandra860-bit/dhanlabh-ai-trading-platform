@@ -245,7 +245,7 @@ export function CandleChart({ candles = [], direction }) {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-5 py-3">
         <div>
           <p className="text-sm font-bold text-white">Advanced candle chart</p>
-          <p className="text-xs text-slate-500">Candles · volume · EMA 20/50 · VWAP · Bollinger bands</p>
+          <p className="text-xs text-slate-500">Candles - volume - EMA 20/50 - VWAP - Bollinger bands</p>
         </div>
         <p className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-slate-400">Hover for OHLC</p>
       </div>

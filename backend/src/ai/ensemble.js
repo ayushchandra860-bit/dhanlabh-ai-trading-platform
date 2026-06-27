@@ -202,6 +202,89 @@ function tradePlanner(direction, ctx, riskLevel, confidence, timeframe) {
 }
 
 export async function runFullAnalysis({ symbol, timeframe, candles, persist = true }) {
+  if (!Array.isArray(candles) || candles.length < 5) {
+    const analysis = {
+      symbol,
+      timeframe,
+      generatedAt: new Date().toISOString(),
+      direction: 'NO TRADE',
+      tradeRecommendation: 'NO TRADE',
+      finalOutput: 'NO TRADE',
+      tradeScore: 0,
+      tradeGrade: 'C',
+      bullishProbability: 0,
+      bearishProbability: 0,
+      confidence: 0,
+      riskLevel: 'High',
+      signalGrade: 'C',
+      highlight: false,
+      trendStrength: 'Weak',
+      noTradeReason: 'Not enough candle data available for stable analysis.',
+      forecast: {},
+      planner: {
+        tradeType: 'Fixed Time Trade',
+        action: 'NO TRADE',
+        entry: null,
+        expiry: null,
+        entryWindow: 'No entry window',
+        stakeRiskPercent: 0,
+        invalidation: 'Wait for stable candle data.',
+        payoutRule: 'Skip until market data is stable.'
+      },
+      entry: null,
+      suggestedExpiry: null,
+      reasons: ['Not enough candle data available for stable analysis.'],
+      warnings: ['Market data returned too few candles.'],
+      engines: [],
+      tradeApproval: {
+        question: 'Should this trade be taken?',
+        answer: 'NO',
+        approved: false,
+        reason: 'Rejected because candle data is incomplete.'
+      },
+      patternMemory: {
+        historicalSimilarity: 0,
+        historicalWinRate: null,
+        historicalLossRate: null,
+        patternMatchConfidence: 0,
+        samples: 0,
+        status: 'Needs stable candle data'
+      },
+      confidenceCalibration: {
+        confidence: 0,
+        adjustment: 0,
+        reason: 'Confidence cannot be calibrated without candle data.'
+      },
+      learningSnapshot: {
+        date: new Date().toISOString().slice(0, 10),
+        time: new Date().toISOString().slice(11, 19),
+        asset: symbol,
+        expiry: timeframe,
+        indicators: {},
+        oscillators: {},
+        patterns: [],
+        trend: 'Unknown',
+        volume: {},
+        decision: 'NO TRADE',
+        confidence: 0,
+        probability: { bullish: 0, bearish: 0 },
+        tradeQuality: 'C',
+        actualMarketResult: null,
+        winLoss: null,
+        setupSignature: []
+      },
+      topFactors: [],
+      lastPrice: null,
+      dataSource: candles?.dataSource || 'unavailable',
+      providerAudit: candles?.providerAudit || [],
+      dataIntegrity: candles?.dataIntegrity || { status: 'unavailable', lowConfidence: true, confidencePenalty: 99, reason: 'No usable candles were available.' },
+      lowConfidenceData: true,
+      dataWarning: 'Market data returned too few candles. No trade should be taken.',
+      candles: Array.isArray(candles) ? candles : []
+    };
+    if (persist) await savePrediction(analysis).catch(() => {});
+    return analysis;
+  }
   const ctx = createAnalysisContext({ symbol, timeframe, candles });
   const initialResults = engines.map((engine) => engine(ctx));
   const results = [...initialResults, confidenceAI(ctx, initialResults)];
@@ -231,14 +314,16 @@ export async function runFullAnalysis({ symbol, timeframe, candles, persist = tr
   const memory = await patternMemory(symbol, timeframe, signature);
   const calibration = applyCalibration(confidence, memory);
   confidence = calibration.confidence;
-  const noTrade = poorMarket || edge < 10 || confidence < 58;
-  if (noTrade) {
-    direction = poorMarket ? 'NO TRADE' : 'WAIT';
-    confidence = Math.min(confidence, 57);
-  }
   let riskLevel = riskResult?.riskLevel ?? 'Medium';
   if (dataIntegrity.status === 'provider-divergence') riskLevel = 'High';
   else if (dataIntegrity.lowConfidence && riskLevel === 'Low') riskLevel = 'Medium';
+  const highRiskWithoutEdge = riskLevel === 'High' && confidence < 80;
+  const lowConfidenceApproval = confidence < 58;
+  const noTrade = poorMarket || edge < 10 || lowConfidenceApproval || highRiskWithoutEdge;
+  if (noTrade) {
+    direction = poorMarket || highRiskWithoutEdge ? 'NO TRADE' : 'WAIT';
+    confidence = Math.min(confidence, 57);
+  }
   const signalGrade = gradeSignal(confidence, riskLevel, noTrade);
   const tradeApproval = {
     question: 'Should this trade be taken?',
@@ -249,12 +334,23 @@ export async function runFullAnalysis({ symbol, timeframe, candles, persist = tr
   const topFactors = results.flatMap((result) => result.reasons.map((reason) => ({ reason, engine: result.engine, confidence: result.confidence })))
     .sort((a, b) => b.confidence - a.confidence)
     .slice(0, 7);
+  const planner = tradePlanner(direction, ctx, riskLevel, confidence, timeframe);
+  const warnings = [
+    dataIntegrity.lowConfidence && dataIntegrity.reason,
+    noTrade && 'No-trade engine blocked approval.',
+    riskLevel === 'High' && 'High risk environment.',
+    riskResult?.metrics?.volumeRatio < 0.75 && 'Weak volume confirmation.',
+    memory.samples === 0 && 'No completed historical pattern memory for this setup yet.'
+  ].filter(Boolean);
   const analysis = {
     symbol,
     timeframe,
     generatedAt: new Date().toISOString(),
     direction,
     tradeRecommendation: direction,
+    finalOutput: direction,
+    tradeScore: confidence,
+    tradeGrade: signalGrade,
     bullishProbability: direction === 'NO TRADE' ? Math.min(buyProbability, 49) : buyProbability,
     bearishProbability: direction === 'NO TRADE' ? Math.min(sellProbability, 49) : sellProbability,
     confidence,
@@ -266,11 +362,16 @@ export async function runFullAnalysis({ symbol, timeframe, candles, persist = tr
       poorMarket && 'Sideways/low-quality market',
       riskResult?.metrics?.volumeRatio < 0.75 && 'Low volume confirmation',
       edge < 10 && 'Weak AI-engine confirmation',
+      highRiskWithoutEdge && 'High-risk fixed-time setup without enough confidence edge',
       dataIntegrity.lowConfidence && dataIntegrity.reason,
-      confidence < 58 && 'Confidence below approval threshold'
+      lowConfidenceApproval && 'Confidence below approval threshold'
     ].filter(Boolean).join(', ') : null,
     forecast: durationForecast(direction, confidence, ctx),
-    planner: tradePlanner(direction, ctx, riskLevel, confidence, timeframe),
+    planner,
+    entry: planner.entry,
+    suggestedExpiry: planner.expiry,
+    reasons: topFactors.map((factor) => `${factor.engine}: ${factor.reason}`),
+    warnings,
     engines: results,
     tradeApproval,
     patternMemory: memory,

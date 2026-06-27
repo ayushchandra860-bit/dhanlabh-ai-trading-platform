@@ -38,7 +38,7 @@ export default function App() {
           <div className="grid h-12 w-12 place-items-center rounded-2xl bg-aqua/15 text-aqua"><Bot /></div>
           <div>
             <h1 className="text-2xl font-black text-white">Dhanlabh AI Trading Intelligence</h1>
-            <p className="text-sm text-slate-500">Probability-based analysis only · no guaranteed outcomes · not financial advice · {assets.length} assets</p>
+            <p className="text-sm text-slate-500">Probability-based analysis only - no guaranteed outcomes - not financial advice - {assets.length} assets</p>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3">

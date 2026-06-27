@@ -81,4 +81,5 @@ export function attachWebSocketServer(server) {
       if (pingTimer) clearInterval(pingTimer);
     });
   });
+  return wss;
 }
