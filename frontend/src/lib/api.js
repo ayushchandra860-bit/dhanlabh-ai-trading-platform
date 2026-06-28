@@ -1,10 +1,16 @@
 function inferHttpBase() {
-  if (import.meta.env.VITE_API_BASE) return import.meta.env.VITE_API_BASE.replace(/\/$/, '');
+  if (import.meta.env.VITE_API_BASE)
+    return import.meta.env.VITE_API_BASE.replace(/\/$/, '');
+
   if (typeof window === 'undefined') return '';
+
   const { hostname, port, protocol } = window.location;
-  const localHost = ['localhost', '127.0.0.1'].includes(hostname);
-  const servedByBackend = port === '10000' || port === '';
-  return localHost && !servedByBackend ? `${protocol}//${hostname}:10000` : '';
+
+  if (port === '5173') {
+    return `${protocol}//${hostname}:10000`;
+  }
+
+  return '';
 }
 
 const API_BASE = inferHttpBase();
@@ -52,10 +58,15 @@ export const api = {
 };
 
 export function wsUrl(symbol, timeframe) {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const localHost = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-  const servedByBackend = window.location.port === '10000' || window.location.port === '';
-  const inferred = localHost && !servedByBackend ? `${protocol}//${window.location.hostname}:10000` : `${protocol}//${window.location.host}`;
-  const base = (import.meta.env.VITE_WS_BASE || inferred).replace(/\/$/, '');
-  return `${base}/ws/market?symbol=${encodeURIComponent(symbol)}&timeframe=${encodeURIComponent(timeframe)}`;
+  const protocol =
+    window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+
+  const host =
+    window.location.port === '5173'
+      ? `${window.location.hostname}:10000`
+      : window.location.host;
+
+  return `${protocol}//${host}/ws/market?symbol=${encodeURIComponent(
+    symbol
+  )}&timeframe=${encodeURIComponent(timeframe)}`;
 }
