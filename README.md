@@ -1,92 +1,84 @@
-# Dhanlabh AI Trading Intelligence
+# DhanLabh AI Chart Assistant
 
-Production-oriented Version 2 PWA for probability-based fixed-time trading analysis. It includes a React/Vite/Tailwind frontend, Node/Express backend, WebSocket streaming, modular AI engines, journaling, screenshot analysis, backtesting, PWA install support, and Render deployment config.
+Personal Windows desktop AI chart analysis assistant for Olymp Trade.
 
-It never claims guaranteed profits or 100% accuracy. Every signal is a probability estimate with confidence and risk.
+DhanLabh does not place trades, connect to a broker, manage accounts, or guarantee profit. It watches the visible Olymp Trade candlestick chart and provides probability-based visual analysis.
 
-## Run locally
+## Desktop Features
+
+- Windows desktop app built with Electron and React.
+- Automatically waits for the Olymp Trade window.
+- Automatically detects and locks onto the main candlestick chart.
+- Ignores visible platform UI such as headers, buttons, menus, sidebars, account areas, and notifications.
+- Relocates the chart automatically when Olymp Trade is resized, moved, or refreshed.
+- Continuous monitoring with stale-frame detection.
+- Automatic refresh only when the visible chart changes.
+- Friendly recovery when capture, OCR, or analysis fails.
+- Live status panel with Capture FPS, Processing Time, Last Updated, OCR Status, AI Status, and Capture Status.
+- Local computer-vision chart analysis for trend, momentum, support, resistance, volatility, market structure, and chart patterns.
+- Clean analysis panel with Trend, Support, Resistance, Market Structure, Indicator Summary, Pattern Detected, Confidence Level, and Risk Level.
+- Always-on-top floating overlay with glass styling, compact/full mode, transparency control, resizing, and click-through locking.
+- Local screenshot history, replay mode, and journal notes.
+- Local SQLite storage in the Windows app data folder.
+
+## Folder Structure
+
+```text
+electron/
+  assets/           Windows icon and desktop artwork
+  main.cjs          Electron main process, capture, storage, overlay
+  overlay.html      Always-on-top floating overlay
+  preload.cjs       Secure desktop bridge
+  splash.html       Startup splash screen
+
+frontend/
+  src/App.jsx       Desktop dashboard
+  src/vision/       Olymp Trade chart detection, chart vision, OCR helpers
+  dist/             Production renderer build
+
+scripts/
+  generate-assets.cjs
+```
+
+## Development
 
 ```bash
 npm install
-npm run build
-npm run start
+npm run dev
 ```
 
-Then open `http://localhost:10000`.
+`npm run dev` starts the desktop app and the local renderer together.
 
-For development:
+## Build
 
 ```bash
-npm run dev --workspace backend
-npm run dev --workspace frontend
+npm run build
 ```
 
-When running frontend and backend separately in development, set `VITE_API_BASE=http://localhost:10000` for the frontend if you do not serve it through the backend.
+## Windows Installer And Portable App
 
-## Fixed-time scope
+```bash
+npm run dist:win
+```
 
-Supported expiries: 15s, 30s, 1m, 2m, 3m, 5m, 10m, and 15m.
+The generated files are written to `release-desktop/`:
 
-Supported assets:
+- `DhanLabh-Setup-2.0.0.exe`
+- `DhanLabh-Portable-2.0.0.exe`
 
-- Forex: EUR/USD, GBP/USD, USD/JPY, AUD/USD, USD/CAD, USD/CHF, EUR/JPY, EUR/GBP, GBP/JPY
-- Crypto: BTC/USD, ETH/USD, BNB/USD, SOL/USD, XRP/USD
-- Metals: Gold (XAU/USD), Silver (XAG/USD)
+After installation, launch DhanLabh from the Start Menu, desktop shortcut, or by double-clicking the portable executable.
 
-## Data sources
+## Daily Use
 
-- Multi-source engine priority:
-  1. Binance WebSocket/REST when a Binance symbol exists.
-  2. Yahoo Finance.
-  3. Twelve Data when `TWELVEDATA_API_KEY` is configured.
-- All provider responses are normalized into one candle structure before analysis.
-- The engine compares latest prices from available providers. If the difference exceeds the asset threshold, the signal is flagged as low-confidence and confidence is penalized.
-- Single-source signals are also marked unverified because the platform never treats one provider as fully trusted.
-- If an external data source is unavailable, the backend falls back to cached/stored candles so the app remains usable.
+1. Open Olymp Trade.
+2. Keep the candlestick chart visible.
+3. Launch DhanLabh AI Chart Assistant.
+4. Wait for `LIVE`.
+5. Open the overlay when you want compact always-on-top status.
+6. Save screenshots and notes from the Journal panel.
 
-## Live chart updates
+If Olymp Trade is not open, DhanLabh shows `Waiting for Olymp Trade`.
 
-The backend pushes chart updates over `/ws/market` about every 2.5 seconds. Between public-data refreshes, the latest candle uses a clearly labelled live projection so the graph and values keep moving instead of freezing. If the browser WebSocket is quiet, the frontend automatically falls back to polling.
+## Safety
 
-## AI engines
-
-- Trend AI
-- Momentum AI
-- Price Action AI
-- Pattern/Candlestick AI
-- Smart Money AI
-- Volume AI
-- Market Structure AI
-- Risk AI
-- Confidence AI
-
-Each engine votes independently. The final recommendation is produced by weighted AI voting and blocked by a no-trade detector when confirmation is weak.
-
-Each AI card displays positive/bullish pressure, negative/bearish pressure, confidence, and a Good/Moderate/Bad quality label.
-
-## Fixed Time Trade planner
-
-The planner is designed for fixed-time trading, so it does not pretend stop-loss/take-profit execution applies directly. It returns:
-
-- Entry price
-- Recommended expiry
-- Entry window
-- Maximum stake-risk percentage
-- Invalidation condition
-- Payout/latency caution
-
-## Supabase
-
-The app works without Supabase using in-memory storage. For persistent production storage:
-
-1. Create a Supabase project.
-2. Run `backend/supabase.schema.sql` in the Supabase SQL editor.
-3. Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` to Render or `.env`.
-
-## Deployment
-
-`render.yaml` is included. Push to GitHub, create a Render Blueprint from the repository, and set optional Supabase/TwelveData environment variables.
-
-## Important disclaimer
-
-This software is for educational and analytical use only. It is not financial advice and cannot guarantee trading results.
+This is decision-support software only. It analyzes visible chart structure and indicator-like visual evidence. It cannot know the future, cannot guarantee winning trades, and should not be treated as financial advice.

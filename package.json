@@ -1,25 +1,82 @@
 {
-  "name": "dhanlabh-ai-trading-platform",
-  "version": "1.0.0",
+  "name": "dhanlabh-ai-chart-assistant",
+  "version": "2.0.0",
   "private": true,
-  "description": "Production-oriented AI trading intelligence PWA for probability-based market analysis.",
+  "author": "Ayush",
+  "description": "Personal Windows desktop AI chart analysis assistant for probability-based visual market analysis.",
+  "main": "electron/main.cjs",
   "workspaces": [
-    "frontend",
-    "backend"
+    "frontend"
   ],
   "scripts": {
-    "dev": "concurrently -k -n backend,frontend -c cyan,magenta \"npm run dev --workspace backend\" \"npm run dev --workspace frontend\"",
-    "dev:backend": "npm run dev --workspace backend",
+    "assets": "node scripts/generate-assets.cjs",
+    "dev": "concurrently -k -n vite,electron -c magenta,cyan \"npm run dev --workspace frontend\" \"wait-on http://localhost:5173 && cross-env VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
     "dev:frontend": "npm run dev --workspace frontend",
-    "build": "npm run build --workspace backend && npm run build --workspace frontend",
-    "start": "npm run start --workspace backend",
-    "check": "npm run check --workspace backend && npm run build --workspace frontend"
+    "start": "electron .",
+    "build": "npm run assets && npm run build --workspace frontend",
+    "check": "npm run assets && npm run build --workspace frontend",
+    "dist:win": "npm run build && electron-builder --win",
+    "pack:win": "npm run build && electron-builder --win --dir"
+  },
+  "build": {
+    "appId": "com.dhanlabh.chartassistant",
+    "productName": "DhanLabh AI Chart Assistant",
+    "directories": {
+      "output": "release-desktop"
+    },
+    "files": [
+      "electron/**/*",
+      "frontend/dist/**/*",
+      "package.json",
+      "node_modules/sql.js/**/*"
+    ],
+    "asar": true,
+    "compression": "maximum",
+    "publish": null,
+    "win": {
+      "icon": "electron/assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "DhanLabh-Setup-${version}.${ext}",
+      "installerIcon": "electron/assets/icon.ico",
+      "uninstallerIcon": "electron/assets/icon.ico",
+      "installerHeaderIcon": "electron/assets/icon.ico",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DhanLabh"
+    },
+    "portable": {
+      "artifactName": "DhanLabh-Portable-${version}.${ext}"
+    }
   },
   "devDependencies": {
-    "concurrently": "^10.0.3"
+    "concurrently": "^10.0.3",
+    "cross-env": "^10.1.0",
+    "electron": "^42.5.1",
+    "electron-builder": "^26.15.3",
+    "wait-on": "^9.0.10"
   },
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=10.0.0"
+  },
+  "dependencies": {
+    "sql.js": "^1.14.1"
   }
 }

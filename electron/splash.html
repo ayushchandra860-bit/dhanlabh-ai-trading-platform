@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: #050816;
+        color: #e2e8f0;
+        font-family: Inter, Segoe UI, Arial, sans-serif;
+        overflow: hidden;
+      }
+
+      body {
+        display: grid;
+        place-items: center;
+      }
+
+      .card {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        place-items: center;
+        background:
+          linear-gradient(135deg, rgba(25, 211, 218, 0.12), transparent 34%),
+          linear-gradient(315deg, rgba(54, 243, 154, 0.1), transparent 38%),
+          #050816;
+      }
+
+      .inner {
+        text-align: center;
+      }
+
+      img {
+        width: 86px;
+        height: 86px;
+        filter: drop-shadow(0 24px 42px rgba(25, 211, 218, 0.26));
+      }
+
+      h1 {
+        margin: 18px 0 8px;
+        color: white;
+        font-size: 24px;
+        font-weight: 950;
+      }
+
+      p {
+        margin: 0;
+        color: #94a3b8;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .bar {
+        width: 260px;
+        height: 4px;
+        margin: 28px auto 0;
+        overflow: hidden;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.08);
+      }
+
+      .bar::before {
+        content: "";
+        display: block;
+        width: 42%;
+        height: 100%;
+        border-radius: inherit;
+        background: linear-gradient(90deg, #19d3da, #36f39a);
+        animation: load 1.1s ease-in-out infinite alternate;
+      }
+
+      @keyframes load {
+        from { transform: translateX(0); }
+        to { transform: translateX(140%); }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <section class="inner">
+        <img src="./assets/icon.svg" alt="DhanLabh icon" />
+        <h1>DhanLabh AI Chart Assistant</h1>
+        <p>Starting local screen vision engine</p>
+        <div class="bar"></div>
+      </section>
+    </main>
+  </body>
+</html>

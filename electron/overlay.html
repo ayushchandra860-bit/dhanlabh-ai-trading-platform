@@ -1,0 +1,198 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <style>
+      :root {
+        --panel-opacity: 0.82;
+      }
+
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        background: transparent;
+        color: #e2e8f0;
+        font-family: Inter, Segoe UI, Arial, sans-serif;
+        overflow: hidden;
+      }
+
+      .panel {
+        height: calc(100% - 14px);
+        margin: 7px;
+        padding: 12px;
+        border: 1px solid rgba(25, 211, 218, 0.34);
+        border-radius: 18px;
+        background:
+          linear-gradient(135deg, rgba(255, 255, 255, 0.11), rgba(255, 255, 255, 0.03)),
+          rgba(5, 8, 22, var(--panel-opacity));
+        box-shadow: 0 22px 70px rgba(0, 0, 0, 0.45);
+        backdrop-filter: blur(18px);
+        -webkit-app-region: drag;
+      }
+
+      .top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .label {
+        color: #94a3b8;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .trend {
+        margin-top: 3px;
+        color: #36f39a;
+        font-size: 25px;
+        font-weight: 950;
+        line-height: 1;
+      }
+
+      .live {
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 999px;
+        padding: 5px 8px;
+        color: #cbd5e1;
+        font-size: 11px;
+        font-weight: 950;
+        background: rgba(255, 255, 255, 0.06);
+      }
+
+      .live.on {
+        border-color: rgba(54, 243, 154, 0.42);
+        color: #06101c;
+        background: #36f39a;
+      }
+
+      .confidence {
+        margin-top: 8px;
+        color: #19d3da;
+        font-size: 22px;
+        font-weight: 950;
+      }
+
+      .required {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 7px;
+        margin-top: 12px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-top: 8px;
+      }
+
+      .box {
+        min-width: 0;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 8px;
+        background: rgba(255, 255, 255, 0.055);
+      }
+
+      .value {
+        margin-top: 3px;
+        overflow: hidden;
+        color: white;
+        font-size: 13px;
+        font-weight: 900;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      body.compact .panel {
+        padding: 10px 12px;
+      }
+
+      body.compact .grid {
+        display: none;
+      }
+
+      body.compact .required {
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 6px;
+      }
+
+      body.compact .trend {
+        font-size: 21px;
+      }
+
+      body.compact .confidence {
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="panel">
+      <div class="top">
+        <div>
+          <div class="label">Trend</div>
+          <div id="trend" class="trend">Waiting</div>
+          <div id="confidence" class="confidence">0%</div>
+        </div>
+          <div id="live" class="live">STANDBY</div>
+      </div>
+      <div class="required">
+        <div class="box"><div class="label">Decision</div><div id="decision" class="value">WAIT</div></div>
+        <div class="box"><div class="label">Market</div><div id="market" class="value">Waiting</div></div>
+        <div class="box"><div class="label">Risk</div><div id="risk" class="value">-</div></div>
+        <div class="box"><div class="label">Pattern</div><div id="pattern" class="value">-</div></div>
+      </div>
+      <div class="grid">
+        <div class="box"><div class="label">Support</div><div id="support" class="value">-</div></div>
+        <div class="box"><div class="label">Resistance</div><div id="resistance" class="value">-</div></div>
+        <div class="box"><div class="label">Momentum</div><div id="momentum" class="value">-</div></div>
+        <div class="box"><div class="label">Updated</div><div id="updated" class="value">-</div></div>
+        <div class="box"><div class="label">Chart</div><div id="chart" class="value">Waiting</div></div>
+        <div class="box"><div class="label">Status</div><div id="status" class="value">Waiting</div></div>
+      </div>
+    </div>
+    <script>
+      function setText(id, value) {
+        document.getElementById(id).textContent = value;
+      }
+
+      function shortTime(value) {
+        if (!value) return '-';
+        try {
+          return new Date(value).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        } catch {
+          return '-';
+        }
+      }
+
+      window.dhanlabhDesktop.onOverlaySettings((settings) => {
+        document.documentElement.style.setProperty('--panel-opacity', String(settings?.opacity ?? 0.82));
+        document.body.classList.toggle('compact', Boolean(settings?.compact));
+      });
+
+      window.dhanlabhDesktop.onOverlayAnalysis((analysis) => {
+        const live = Boolean(analysis?.live);
+        const liveNode = document.getElementById('live');
+        liveNode.textContent = live ? 'LIVE' : 'STANDBY';
+        liveNode.classList.toggle('on', live);
+        setText('trend', analysis?.trend || 'Waiting');
+        setText('confidence', `${Math.round(analysis?.confidence || 0)}%`);
+        setText('decision', analysis?.decision || 'WAIT');
+        setText('market', analysis?.marketPhase || analysis?.marketStructure || 'Waiting');
+        setText('risk', analysis?.risk || '-');
+        setText('pattern', analysis?.pattern || '-');
+        setText('support', analysis?.support ?? '-');
+        setText('resistance', analysis?.resistance ?? '-');
+        setText('momentum', analysis?.momentum || '-');
+        setText('updated', shortTime(analysis?.lastUpdated));
+        setText('chart', analysis?.chartStatus || 'Waiting');
+        setText('status', analysis?.captureStatus || analysis?.aiStatus || 'Waiting');
+      });
+    </script>
+  </body>
+</html>
