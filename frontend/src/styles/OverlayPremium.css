@@ -1,0 +1,297 @@
+/* OverlayPremium.css - Responsive Resizable Build */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --bg-panel: rgba(10, 14, 20, 0.85);
+  --text-main: #e0e0e0;
+  --text-dim: #8b949e;
+  --color-buy: #10b981; 
+  --color-sell: #ef4444; 
+  --color-wait: #f59e0b; 
+}
+
+body, html {
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  color: var(--text-main);
+  /* Do not block pointer events globally, we use them for the window */
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Allow entire window to act as drag region at the very top */
+.window-drag-region {
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 30px;
+  -webkit-app-region: drag;
+  z-index: 1000;
+  pointer-events: auto;
+}
+
+.overlay-v2-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding-top: 30px; /* Room for drag region */
+  box-sizing: border-box;
+}
+
+.main-layout-grid {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: calc(100% - 30px);
+  padding: 10px;
+  box-sizing: border-box;
+  gap: 20px;
+}
+
+/* Base Card Style matching the reference */
+.ref-card {
+  background: var(--bg-panel);
+  border-radius: 8px;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  pointer-events: auto; /* Clickable */
+  -webkit-app-region: no-drag; /* Exclude card interiors from dragging */
+}
+
+/* Make headers inside cards act as drag handles too! */
+.ref-header, .ref-header-buy, .ref-header-sell, .ref-header-wait {
+  -webkit-app-region: drag;
+  cursor: grab;
+}
+
+/* The left side column */
+.dock-left {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 30%;
+  min-width: 250px;
+  max-width: 350px;
+  height: 100%;
+}
+
+/* The center empty space */
+.dock-center {
+  flex: 1; /* Pushes the left and right docks apart */
+  min-width: 100px;
+  pointer-events: none; /* Let clicks pass through the center to the chart */
+}
+
+/* The right side column */
+.dock-right {
+  width: 35%;
+  min-width: 280px;
+  max-width: 400px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Border Modifiers */
+.border-buy { border: 1px solid var(--color-buy); }
+.border-sell { border: 1px solid var(--color-sell); }
+.border-wait { border: 1px solid var(--color-wait); }
+.border-neutral { border: 1px solid rgba(255,255,255,0.1); }
+
+/* Typography */
+.ref-header {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 8px;
+  color: #fff;
+}
+.ref-header-buy { color: var(--color-buy); font-size: 0.8rem; font-weight: 700; }
+.ref-header-sell { color: var(--color-sell); font-size: 0.8rem; font-weight: 700; }
+.ref-header-wait { color: var(--color-wait); font-size: 0.8rem; font-weight: 700; }
+
+.ref-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+  text-transform: uppercase;
+  margin-top: 12px;
+  margin-bottom: 2px;
+}
+
+.ref-val-large { font-size: 1.5rem; font-weight: 700; }
+.ref-val-medium { font-size: 1rem; font-weight: 700; }
+.ref-val-small { font-size: 0.85rem; font-weight: 600; }
+
+.ref-text-buy { color: var(--color-buy); }
+.ref-text-sell { color: var(--color-sell); }
+.ref-text-wait { color: var(--color-wait); }
+.ref-text-dim { color: var(--text-dim); }
+
+.signal-massive {
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1;
+  margin: 8px 0 16px 0;
+  letter-spacing: -0.02em;
+}
+
+/* Metric Rows for Right Panel */
+.ref-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  margin-bottom: 6px;
+}
+.ref-row-title {
+  color: #fff;
+}
+.ref-row-val {
+  color: #fff;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+.ref-row-sub {
+  font-size: 0.65rem;
+  color: var(--color-buy);
+}
+
+.ref-stars {
+  color: var(--color-buy);
+  font-size: 0.7rem;
+}
+.ref-stars.red {
+  color: var(--color-sell);
+}
+
+.ref-divider {
+  height: 1px;
+  background: rgba(255,255,255,0.1);
+  margin: 12px 0;
+}
+
+/* Bullet Lists */
+.ref-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.ref-list li {
+  font-size: 0.75rem;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #fff;
+}
+.ref-list li i.check { color: var(--color-buy); margin-top: 2px; font-size: 0.7rem; }
+.ref-list li i.cross { color: var(--color-sell); margin-top: 2px; font-size: 0.7rem; }
+.ref-list li i.dash { color: var(--text-dim); margin-top: 2px; font-size: 0.7rem; }
+
+/* Checklist Grid */
+.checklist-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+.checklist-item .label { color: #fff; }
+.checklist-item .val { color: var(--color-buy); font-weight: 600; }
+.checklist-item .val.no { color: var(--color-sell); }
+
+/* Recent Signals Horizontal */
+.recent-signals {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  overflow-x: auto;
+}
+.rs-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.75rem;
+  min-width: 40px;
+}
+.rs-time { color: #fff; margin-bottom: 4px; }
+.rs-sig { font-weight: 700; }
+.rs-icon { margin-top: 2px; font-size: 0.7rem; }
+
+/* Scrollbar styling for right panel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.4);
+}
+
+/* DEBUG MODE CSS */
+.debug-mode-panel {
+  width: 100%;
+  height: 100vh;
+  padding: 40px 20px 20px 20px;
+  background: rgba(13, 17, 23, 0.95);
+  backdrop-filter: blur(10px);
+  overflow-y: auto;
+}
+.debug-pre {
+  background: rgba(0,0,0,0.5);
+  padding: 10px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  color: #a3b3cc;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 80vh;
+  overflow-y: auto;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.overlay-controls {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.debug-toggle-btn {
+  background: rgba(239, 68, 68, 0.2);
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  color: #ef4444;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.debug-toggle-btn:hover {
+  background: rgba(239, 68, 68, 0.4);
+}
+.opacity-slider {
+  width: 60px;
+  pointer-events: auto;
+}
+.decision-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}

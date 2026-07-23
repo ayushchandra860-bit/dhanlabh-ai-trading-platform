@@ -1,0 +1,14 @@
+.status-bar {
+  width: 100%;
+  text-align: center;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-bar .separator {
+  color: var(--border-subtle);
+}

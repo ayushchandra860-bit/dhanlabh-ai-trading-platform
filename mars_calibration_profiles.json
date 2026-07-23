@@ -1,0 +1,29 @@
+{
+  "activeProfileId": "default-production",
+  "profiles": [
+    {
+      "id": "default-production",
+      "version": "1.0.0",
+      "createdAt": 1784527258870,
+      "description": "Factory default MARS calibration profile",
+      "thresholds": {
+        "minimumActionableConfidence": 0.55,
+        "singleTimeframePenalty": 0.15,
+        "maxConfidenceCap": 0.95,
+        "chaosRegimeCap": 0.6
+      },
+      "likelihoods": {
+        "neutralBaseline": 0.5,
+        "trendContinuationMultiplier": 0.8,
+        "reversalExhaustionMultiplier": 0.85
+      },
+      "regimes": {
+        "highVolTrendConfidence": 80,
+        "lowVolRangeConfidence": 65,
+        "highVolRangeConfidence": 90,
+        "lowVolTrendConfidence": 55,
+        "timeframeAlignmentBoost": 15
+      }
+    }
+  ]
+}

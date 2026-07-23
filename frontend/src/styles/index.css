@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+html.dark, :root {
+  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  /* Backgrounds */
+  --bg-base: #0a0a0a;         /* Deep charcoal workspace */
+  --bg-panel: #111111;        /* Slightly elevated panels */
+  --bg-surface: #1a1a1a;      /* Interactive surfaces */
+  
+  /* Accents */
+  --accent-primary: #0070F3;  /* Vercel-style sharp blue */
+  --accent-hover: #3291FF;
+  --accent-glow: rgba(0, 112, 243, 0.15);
+
+  /* Typography */
+  --text-primary: #EDEDED;
+  --text-secondary: #A1A1AA;
+  --text-tertiary: #52525B;
+
+  /* States */
+  --state-success: #10B981;
+  --state-warning: #F5A623;
+  --state-error: #E5484D;
+  
+  /* Borders */
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-focus: rgba(255, 255, 255, 0.15);
+
+  color-scheme: dark;
+  color: var(--text-primary);
+  background-color: var(--bg-base);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html.light {
+  --bg-base: #f0f2f5;
+  --bg-panel: #ffffff;
+  --bg-surface: #e5e7eb;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --accent-primary: #0070F3;
+  --accent-hover: #3291FF;
+  --accent-glow: rgba(0, 112, 243, 0.15);
+  --state-success: #059669;
+  --state-danger: #dc2626;
+  --state-warning: #d97706;
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-focus: rgba(0, 0, 0, 0.15);
+
+  color-scheme: light;
+  color: var(--text-primary);
+  background-color: var(--bg-base);
+}
+
+
+body {
+  margin: 0;
+  overflow: hidden; /* Prevent body scrollbars */
+}

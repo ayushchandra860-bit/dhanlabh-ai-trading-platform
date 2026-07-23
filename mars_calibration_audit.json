@@ -1,0 +1,8 @@
+[
+  {
+    "timestamp": 1784527258871,
+    "action": "ACTIVATE_PROFILE",
+    "targetProfileId": "default-production",
+    "reason": "Initial factory default setup"
+  }
+]

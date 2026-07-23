@@ -1,0 +1,73 @@
+{
+  "name": "dhanlabh-ai-v2",
+  "private": true,
+  "version": "0.1.0",
+  "main": "dist-electron/electron/main/main.js",
+  "scripts": {
+    "dev:frontend": "vite",
+    "dev:backend": "node scripts/run-backend.cjs",
+    "dev": "concurrently \"npm:dev:frontend\" \"npm:dev:backend\"",
+    "build:frontend": "vite build",
+    "build:electron": "tsc -p tsconfig.node.json",
+    "build": "npm run build:frontend && npm run build:electron",
+    "lint": "eslint electron frontend shared --ext ts,tsx --report-unused-disable-directives",
+    "preview": "vite preview",
+    "start:electron": "electron .",
+    "start": "npm run build && npm run start:electron",
+    "package": "npm run build && electron-builder"
+  },
+  "build": {
+    "appId": "com.dhanlabh.aiv2",
+    "productName": "DhanLabh AI",
+    "npmRebuild": false,
+    "directories": {
+      "output": "release/"
+    },
+    "files": [
+      "dist-electron/**/*",
+      "dist/frontend/**/*",
+      "backend/**/*",
+      "database/**/*",
+      "scripts/**/*",
+      "eng.traineddata",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  },
+  "dependencies": {
+    "active-win": "^8.1.0",
+    "better-sqlite3": "^12.11.1",
+    "lucide-react": "^0.395.0",
+    "pngjs": "^7.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.30.4",
+    "tesseract.js": "^5.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/pngjs": "^6.0.5",
+    "@types/react": "^18.2.66",
+    "@types/react-dom": "^18.2.22",
+    "@typescript-eslint/eslint-plugin": "^7.2.0",
+    "@typescript-eslint/parser": "^7.2.0",
+    "@vitejs/plugin-react": "^4.2.1",
+    "concurrently": "^8.2.2",
+    "@electron/rebuild": "^3.6.0",
+    "electron-builder": "^26.15.3",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.6",
+    "typescript": "^5.2.2",
+    "vite": "^5.2.0"
+  }
+}

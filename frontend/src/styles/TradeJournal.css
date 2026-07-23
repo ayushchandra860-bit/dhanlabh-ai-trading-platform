@@ -1,0 +1,97 @@
+.trade-journal-container {
+  padding: 20px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+.trade-journal-container h2 {
+  margin-top: 0;
+  margin-bottom: 20px;
+}
+
+.journal-stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.stat-card {
+  background-color: var(--bg-panel);
+  padding: 15px 25px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  flex: 1;
+  text-align: center;
+}
+
+.stat-card h4 {
+  margin: 0 0 10px 0;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 0.85rem;
+}
+
+.stat-card p {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.stat-card p.positive { color: var(--state-success); }
+.stat-card p.negative { color: var(--state-error); }
+
+.table-container {
+  flex: 1;
+  overflow: auto;
+  background-color: var(--bg-panel);
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+}
+
+.journal-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.journal-table th, .journal-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.journal-table th {
+  background-color: rgba(0, 0, 0, 0.2);
+  color: var(--text-secondary);
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.journal-table tbody tr:hover {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.direction.buy { color: var(--state-success); font-weight: bold; }
+.direction.sell { color: var(--state-error); font-weight: bold; }
+
+td.positive { color: var(--state-success); font-weight: bold; }
+td.negative { color: var(--state-error); font-weight: bold; }
+
+.reason-cell {
+  max-width: 200px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.error-message {
+  color: var(--state-error);
+  padding: 20px;
+  background-color: rgba(239, 68, 68, 0.1);
+  border-radius: 8px;
+  text-align: center;
+}

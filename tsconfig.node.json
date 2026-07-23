@@ -1,0 +1,36 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2020",
+
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    "outDir": "./dist-electron",
+    "rootDir": ".",
+
+    "noEmit": false,
+    "allowImportingTsExtensions": false,
+
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+
+    "types": ["node"],
+
+    "baseUrl": ".",
+    "paths": {
+      "@shared/*": ["shared/*"]
+    }
+  },
+  "include": [
+    "electron/**/*.ts",
+    "electron/**/*.d.ts",
+    "shared/**/*.ts"
+  ],
+  "exclude": [
+    "frontend",
+    "node_modules",
+    "dist"
+  ]
+}
