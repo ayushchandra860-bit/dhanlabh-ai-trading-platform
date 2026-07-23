@@ -15,6 +15,8 @@ export interface SignalHistoryEntry {
   signal:     'BUY' | 'SELL' | 'WAIT';
   confidence: number;
   id:         string;
+  outcome?:   'WIN' | 'LOSS' | 'WAITING';
+  expiry?:    string;
 }
 
 const MAX_HISTORY = 20;

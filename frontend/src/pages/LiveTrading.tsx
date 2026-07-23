@@ -1,119 +1,103 @@
 import React, { useState } from 'react';
-import { useVision } from '../hooks/useVision';
-import { useWindowTracking } from '../../../shared/types/WindowTrackingContext';
-import { Play, Square, Eye, EyeOff } from 'lucide-react';
-import '../styles/DesktopPages.css';
 
-export const LiveTrading: React.FC = () => {
-  const { isActive, startVision, stopVision } = useVision();
-  const { windowState } = useWindowTracking();
+export default function LiveTrading() {
+  const [isRunning, setIsRunning] = useState(false);
 
-  const [broker, setBroker] = useState('Olymp Trade');
-  const [isOverlayOn, setIsOverlayOn] = useState(true);
-
-  const toggleOverlay = async () => {
-    if ((window as any).electronAPI?.overlay?.toggle) {
-      const isVisible = await (window as any).electronAPI.overlay.toggle();
-      setIsOverlayOn(isVisible);
-    } else {
-      setIsOverlayOn(!isOverlayOn);
+  const handleToggleAnalysis = () => {
+    setIsRunning(prev => !prev);
+    if ((window as any).electronAPI?.toggleOverlay) {
+      (window as any).electronAPI.toggleOverlay();
     }
   };
 
   return (
-    <div className="page-container">
-      <div className="page-header-row">
+    <div style={{ padding: '32px', backgroundColor: '#080e17', minHeight: '100vh', color: '#ffffff', fontFamily: 'monospace, sans-serif' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', borderBottom: '1px solid #1e293b', paddingBottom: '16px' }}>
         <div>
-          <h1 className="page-title">Live Control Center</h1>
-          <div className="page-subtitle">Primary control center for engaging AI scanner and overlay window</div>
+          <h1 style={{ fontSize: '24px', fontWeight: '900', color: '#22c55e', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            ⚡ Live Control Center
+          </h1>
+          <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+            Real-time AI Candle, Pattern & Indicator Scanner for Olymp Trade
+          </p>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontSize: '11px', padding: '4px 12px', borderRadius: '20px', backgroundColor: isRunning ? 'rgba(6, 78, 59, 0.4)' : 'rgba(136, 19, 55, 0.4)', border: isRunning ? '1px solid #059669' : '1px solid #e11d48', color: isRunning ? '#34d399' : '#fb7185', fontWeight: 'bold' }}>
+            {isRunning ? '● AI RUNNING' : '● AI STOPPED'}
+          </span>
         </div>
       </div>
 
-      {/* Primary Control Banner */}
-      <div className="control-center-banner">
-        <div className="cc-left">
-          <div style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-dim)', letterSpacing: '0.06em' }}>
-            ENGINE CONTROL
+      {/* Control Card */}
+      <div style={{ backgroundColor: 'rgba(15, 23, 42, 0.8)', border: '1px solid #1e293b', borderRadius: '12px', padding: '24px', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div>
+            <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#64748b', letterSpacing: '1px' }}>ENGINE CONTROL</div>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#f8fafc', marginTop: '4px' }}>
+              {isRunning ? 'ANALYSIS RUNNING' : 'ENGINE STANDBY'}
+            </h2>
+            <p style={{ fontSize: '12px', color: '#9ca3af', marginTop: '4px' }}>
+              Analyzes candles, price patterns, S/R levels, and indicators from whatever active chart is visible on Olymp Trade.
+            </p>
           </div>
-          <div style={{ fontSize: '1.4rem', fontWeight: 800 }}>
-            {isActive ? 'ANALYSIS RUNNING' : 'ANALYSIS STOPPED'}
-          </div>
-          <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            {isActive ? 'Scanning live broker chart every 1000ms' : 'Click Start Analysis to engage live scanner'}
-          </div>
-        </div>
 
-        <div className="cc-actions">
-          {!isActive ? (
-            <button className="btn-start" onClick={startVision}>
-              <Play size={18} />
-              Start Analysis
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button
+              onClick={handleToggleAnalysis}
+              style={{
+                padding: '10px 24px',
+                borderRadius: '8px',
+                fontWeight: 'bold',
+                fontSize: '13px',
+                cursor: 'pointer',
+                border: 'none',
+                backgroundColor: isRunning ? '#e11d48' : '#10b981',
+                color: '#ffffff',
+                boxShadow: isRunning ? '0 4px 14px rgba(225, 29, 72, 0.4)' : '0 4px 14px rgba(16, 185, 129, 0.4)'
+              }}
+            >
+              {isRunning ? '⏹ Stop Analysis' : '▶ Start Analysis'}
             </button>
-          ) : (
-            <button className="btn-stop" onClick={stopVision}>
-              <Square size={18} />
-              Stop Analysis
-            </button>
-          )}
-
-          <button className="btn-overlay" onClick={toggleOverlay}>
-            {isOverlayOn ? <Eye size={18} className="text-buy" /> : <EyeOff size={18} className="text-wait" />}
-            <span>Overlay {isOverlayOn ? 'ON' : 'OFF'}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Target Broker Selection */}
-      <div className="prop-card">
-        <div className="prop-card-title" style={{ marginBottom: 16 }}>TARGET BROKER SELECTION</div>
-        <div className="control-config-grid">
-          <div className="control-field">
-            <span className="field-label">BROKER PLATFORM</span>
-            <select className="field-select" value={broker} onChange={(e) => setBroker(e.target.value)}>
-              <option value="Olymp Trade">Olymp Trade (Exclusive)</option>
-              <option value="Quotex">Quotex</option>
-              <option value="Pocket Option">Pocket Option</option>
-            </select>
           </div>
         </div>
       </div>
 
-      {/* System Status Diagnostics */}
-      <div className="dash-grid-top">
-        <div className="prop-card">
-          <div className="prop-card-title">AI ENGINE STATUS</div>
-          <div className="prop-card-val" style={{ fontSize: '1.1rem', color: isActive ? '#00e676' : '#94a3b8' }}>
-            {isActive ? 'RUNNING' : 'STOPPED'}
+      {/* Status Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        <div style={cardStyle}>
+          <div style={cardLabel}>AI ENGINE STATUS</div>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: isRunning ? '#22c55e' : '#9ca3af', marginTop: '8px' }}>
+            {isRunning ? 'RUNNING' : 'STOPPED'}
           </div>
-          <div className="prop-card-sub">{isActive ? 'Cycle: 1000ms' : 'Engine Ready'}</div>
+          <div style={cardSubtext}>1000ms Vision Loop</div>
         </div>
 
-        <div className="prop-card">
-          <div className="prop-card-title">OLYMP TRADE CONNECTION</div>
-          <div className="prop-card-val" style={{ fontSize: '1.1rem', color: windowState?.isFound ? '#00e676' : '#f59e0b' }}>
-            {windowState?.isFound ? 'CONNECTED' : 'SEARCHING'}
-          </div>
-          <div className="prop-card-sub">{windowState?.brokerName || 'Olymp Trade'}</div>
+        <div style={cardStyle}>
+          <div style={cardLabel}>ACTIVE PLATFORM</div>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: '#22c55e', marginTop: '8px' }}>Olymp Trade</div>
+          <div style={cardSubtext}>Exclusive High-Speed Bind</div>
         </div>
 
-        <div className="prop-card">
-          <div className="prop-card-title">CAPTURE STATUS</div>
-          <div className="prop-card-val" style={{ fontSize: '1.1rem', color: windowState?.isFound ? '#00e676' : '#94a3b8' }}>
-            {windowState?.isFound ? 'ACTIVE BIND' : 'WAITING FOR WINDOW'}
-          </div>
-          <div className="prop-card-sub">Screen Bounds Tracked</div>
+        <div style={cardStyle}>
+          <div style={cardLabel}>VISION MODE</div>
+          <div style={{ fontSize: '16px', fontWeight: '900', color: '#f59e0b', marginTop: '8px' }}>AUTO-DETECT (ANY CHART)</div>
+          <div style={cardSubtext}>Auto Chart & Candle Pattern Scan</div>
         </div>
 
-        <div className="prop-card">
-          <div className="prop-card-title">OVERLAY WINDOW</div>
-          <div className="prop-card-val" style={{ fontSize: '1.1rem', color: isOverlayOn ? '#00e676' : '#94a3b8' }}>
-            {isOverlayOn ? 'ENABLED' : 'DISABLED'}
+        <div style={cardStyle}>
+          <div style={cardLabel}>OVERLAY WINDOW</div>
+          <div style={{ fontSize: '18px', fontWeight: '900', color: isRunning ? '#22c55e' : '#9ca3af', marginTop: '8px' }}>
+            {isRunning ? 'ENABLED' : 'DISABLED'}
           </div>
-          <div className="prop-card-sub">Floating Trading UI</div>
+          <div style={cardSubtext}>Floating Trading UI</div>
         </div>
       </div>
     </div>
   );
-};
+}
 
-export default LiveTrading;
+const cardStyle = { backgroundColor: 'rgba(15, 23, 42, 0.6)', border: '1px solid #1e293b', padding: '20px', borderRadius: '12px' };
+const cardLabel = { fontSize: '10px', fontWeight: 'bold' as const, color: '#64748b', letterSpacing: '0.5px' };
+const cardSubtext = { fontSize: '11px', color: '#9ca3af', marginTop: '4px' };

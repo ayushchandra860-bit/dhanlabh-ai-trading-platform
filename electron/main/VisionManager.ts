@@ -107,13 +107,27 @@ export class VisionManager {
   ) {}
 
   
+  private isActive = false;
+
+  public start(): void {
+    this.isActive = true;
+    LoggerService.info('VisionManager: Scanner loop started.');
+  }
+
+  public stop(): void {
+    this.isActive = false;
+    this.isProcessing = false;
+    LoggerService.info('VisionManager: Scanner loop stopped.');
+  }
+
   public cleanup() {
+    this.isActive = false;
     this.isProcessing = false;
     LoggerService.info('VisionManager: Cleanup invoked. Resetting processing state.');
   }
 
   public async onWindowStateUpdate(state: WindowState): Promise<VisionResult | null> {
-    if (!state.isFound || !state.position || !state.size) {
+    if (!this.isActive || !state.isFound || !state.position || !state.size) {
       return null;
     }
 

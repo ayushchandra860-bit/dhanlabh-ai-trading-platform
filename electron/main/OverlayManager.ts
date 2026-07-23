@@ -1,66 +1,91 @@
-import { BrowserWindow, screen, app } from 'electron';
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import path from 'path';
 
 export class OverlayManager {
-  private static instance: OverlayManager;
   private overlayWindow: BrowserWindow | null = null;
+  private isAIActive = false;
 
-  private constructor() {}
+  constructor() {
+    ipcMain.on('set-ignore-mouse-events', (event, ignore: boolean) => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (win && !win.isDestroyed()) {
+        if (ignore) {
+          win.setIgnoreMouseEvents(true, { forward: true });
+          try { win.blur(); } catch (e) {}
+        } else {
+          win.setIgnoreMouseEvents(false);
+        }
+      }
+    });
+  }
 
-  public static getInstance(): OverlayManager {
-    if (!OverlayManager.instance) {
-      OverlayManager.instance = new OverlayManager();
+  public isReady(): boolean {
+    return this.overlayWindow !== null && !this.overlayWindow.isDestroyed() && this.overlayWindow.isVisible();
+  }
+
+  public setAIActive(active: boolean) {
+    this.isAIActive = active;
+  }
+
+  public setInteractive(on: boolean): void {
+    if (!this.overlayWindow || this.overlayWindow.isDestroyed()) return;
+    if (on) {
+      this.overlayWindow.setIgnoreMouseEvents(false);
+    } else {
+      this.overlayWindow.setIgnoreMouseEvents(true, { forward: true });
+      try { this.overlayWindow.blur(); } catch (e) {}
     }
-    return OverlayManager.instance;
   }
 
   public createOrGetOverlay(): BrowserWindow {
-    // Prevent duplicate window spawning
     if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
-      if (!this.overlayWindow.isVisible()) {
-        this.overlayWindow.show();
-      }
       return this.overlayWindow;
     }
 
     const primaryDisplay = screen.getPrimaryDisplay();
-    const { width, height, x, y } = primaryDisplay.bounds;
+    const { width, height } = primaryDisplay.bounds;
+
+    const preloadPath = path.join(__dirname, '../preload/preload.js');
 
     this.overlayWindow = new BrowserWindow({
       width,
       height,
-      x,
-      y,
-      frame: false,
+      x: 0,
+      y: 0,
       transparent: true,
-      backgroundColor: '#00000000',
+      frame: false,
       alwaysOnTop: true,
       skipTaskbar: true,
-      resizable: false,
-      movable: false,
+      resizable: true,
       focusable: false,
       hasShadow: false,
-      show: true,
+      backgroundColor: '#00000000',
       webPreferences: {
-        preload: path.join(__dirname, '../preload/preload.js'),
+        preload: preloadPath,
         nodeIntegration: false,
         contextIsolation: true,
         backgroundThrottling: false,
       },
     });
 
-    // Force Windows OS overlay z-index
     this.overlayWindow.setAlwaysOnTop(true, 'screen-saver');
-    
-    // Enable mouse click-through to trade directly on broker
+    this.overlayWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     this.overlayWindow.setIgnoreMouseEvents(true, { forward: true });
 
-    const isDev = !app.isPackaged;
+    if (this.overlayWindow.webContents) {
+      this.overlayWindow.webContents.setBackgroundThrottling(false);
+    }
+
+    const distPath = path.join(__dirname, '../../../dist/frontend/index.html');
+    const isDev = !!process.env.VITE_DEV_SERVER_URL && process.env.NODE_ENV === 'development';
+
     if (isDev) {
-      this.overlayWindow.loadURL('http://localhost:5173/#/overlay');
+      const devPort = process.env.VITE_DEV_SERVER_URL || 'http://localhost:3000';
+      this.overlayWindow.loadURL(`${devPort}/#/overlay`).catch(() => {
+        this.overlayWindow?.loadFile(distPath, { hash: '/overlay' });
+      });
     } else {
-      const indexPath = path.join(__dirname, '../frontend/index.html');
-      this.overlayWindow.loadFile(indexPath, { hash: '/overlay' });
+      this.overlayWindow.loadFile(distPath, { hash: '/overlay' });
     }
 
     this.overlayWindow.on('closed', () => {
@@ -70,18 +95,47 @@ export class OverlayManager {
     return this.overlayWindow;
   }
 
-  public toggleOverlay(): void {
-    if (!this.overlayWindow || this.overlayWindow.isDestroyed()) {
-      this.createOrGetOverlay();
-      return;
+  public sendVisionResult(result: any) {
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed() && this.overlayWindow.webContents) {
+      this.overlayWindow.webContents.send('signal-update', result);
+      this.overlayWindow.webContents.send('overlay:vision-result', result);
     }
+  }
 
-    if (this.overlayWindow.isVisible()) {
-      this.overlayWindow.hide();
-    } else {
-      this.overlayWindow.show();
+  public onWindowStateUpdate(state: any) {
+    this.sendWindowState(state);
+  }
+
+  public sendWindowState(state: any) {
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed() && this.overlayWindow.webContents) {
+      this.overlayWindow.webContents.send('overlay:window-state', state);
     }
+  }
+
+  public sendModeChange(mode: string) {
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed() && this.overlayWindow.webContents) {
+      this.overlayWindow.webContents.send('overlay:mode-change', mode);
+    }
+  }
+
+  public toggleOverlay() {
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      if (this.overlayWindow.isVisible()) {
+        this.overlayWindow.hide();
+      } else {
+        this.overlayWindow.show();
+      }
+    } else {
+      this.createOrGetOverlay();
+    }
+  }
+
+  public destroy() {
+    if (this.overlayWindow && !this.overlayWindow.isDestroyed()) {
+      this.overlayWindow.close();
+    }
+    this.overlayWindow = null;
   }
 }
 
-export const overlayManager = OverlayManager.getInstance();
+export const overlayManager = new OverlayManager();

@@ -5,7 +5,7 @@ import ReactDOM from 'react-dom/client';
 // filesystem path (e.g. /C:/Users/.../index.html). This never matches <Route path="/">.
 // HashRouter reads the # fragment, which allows multiple windows to load different routes!
 import { HashRouter } from 'react-router-dom';
-import App from './pages/App.tsx';
+import App from './App.tsx';
 import ErrorBoundary from './components/ErrorBoundary.tsx';
 import { ThemeProvider } from './components/ThemeProvider.tsx';
 import { WindowTrackingProvider } from '../../shared/types/WindowTrackingContext.tsx';

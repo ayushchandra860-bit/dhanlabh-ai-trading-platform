@@ -1,13 +1,11 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import path, { resolve } from 'path';
 import type { Plugin } from 'vite';
 
 /**
  * Removes the `crossorigin` attribute from all script and link tags in the
- * generated HTML. Vite adds it automatically for ES modules, but Electron's
- * file:// protocol has no CORS server, so the browser silently refuses to
- * load any script/stylesheet that carries the crossorigin flag.
+ * generated HTML. Essential for Electron's file:// protocol.
  */
 function removeCrossOrigin(): Plugin {
   return {
@@ -20,30 +18,39 @@ function removeCrossOrigin(): Plugin {
   };
 }
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), removeCrossOrigin()],
-  // Define the root of the frontend application for Vite
   root: resolve(__dirname, 'frontend'),
   publicDir: resolve(__dirname, 'public'),
+  base: './',
   build: {
-    // Output directory for the frontend build.
     outDir: resolve(__dirname, 'dist/frontend'),
     emptyOutDir: true,
+    sourcemap: false,
+    minify: 'esbuild',
+    target: 'esnext',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom']
+        }
+      }
+    }
   },
-  // Use relative base path so assets load correctly under Electron's file:// protocol
-  base: './',
+  esbuild: {
+    drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : []
+  },
   server: {
     port: 3000,
   },
-  // Define global variables for the frontend, e.g., to access backend URL
   define: {
     'process.env.VITE_API_URL': JSON.stringify(process.env.VITE_API_URL || 'http://localhost:8000/api'),
     'process.env.npm_package_version': JSON.stringify(process.env.npm_package_version),
   },
   resolve: {
     alias: {
-      '@shared': resolve(__dirname, 'shared'),
-    },
-  },
+      '@': path.resolve(__dirname, './frontend/src'),
+      '@shared': resolve(__dirname, 'shared')
+    }
+  }
 });
